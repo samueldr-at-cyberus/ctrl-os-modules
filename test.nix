@@ -35,6 +35,10 @@ let
       .values
   ;
 
+  # Evaluate the CTRL-OS platform modules for the given `platform`.
+  # This returns the output from the `output` attribute path, with the evaluation
+  # merged into the attribute set.
+  # By default, `system.build.toplevel` is returned, which is the "system build".
   evaluate =
     platform:
     { modules ? []
@@ -54,11 +58,13 @@ let
                   self.nixosModules.developer
                 ];
 
-                ctrl-os.developer.enable = true;
+                # Enable the platform-specific config.
                 ctrl-os.platform = platform;
-                nixpkgs.hostPlatform = "aarch64-linux";
+                ctrl-os.developer.enable = true;
+
+                # Ensure this system build will use cross-compilation if relevant...
                 nixpkgs.buildPlatform = system;
-                system.stateVersion = "25.11";
+                # ... and tag the system build as such.
                 system.nixos.tags = [
                   (
                     if config.nixpkgs.hostPlatform.system == config.nixpkgs.buildPlatform.system
@@ -79,6 +85,12 @@ let
       eval.config
     ) // { inherit eval; }
   ;
+
+  # For a given `platform`, evaluate the installer config from `path`,
+  # relative to the nixpkgs `nixos/modules/installer` path.
+  # The output is the (guessed) relevant build output.
+  # As with `evaluate`, the system config is added to the derivation
+  # attribute set as the `eval` attribute.
   evaluateInstaller =
     platform:
     path:
@@ -90,6 +102,39 @@ let
             imports = [
               "${modulesPath}/installer/${path}"
             ];
+
+            # This is only safe to do when generating images!!!
+            # `stateVersion` should not otherwise be set by an imported modules in a user's config.
+            system.stateVersion = pkgs.lib.versions.majorMinor pkgs.lib.version;
+
+            # Make the installer generate the necessary configuration bits.
+            # FIXME: this is incomplete right now as the whole installer tooling doesn't know about 
+            system.nixos-generate-config.desktopConfiguration =
+              let
+                # Escape string values using JSON, as they are mostly compatible with Nix strings.
+                e = builtins.toJSON;
+              in
+                [
+                  ''
+                    #
+                    # WARNING: Using `nixos-generate-config` with CTRL-OS platform modules is experimental.
+                    #
+                    # This generated configuration DOES NOT yet include the CTRL-OS configuration for the platform.
+                    # You will first need to handle importing the CTRL-OS modules in your configuration.
+                    #
+                    /*
+                    imports = [
+                      ctrl-os.nixosModules.platform
+                      ctrl-os.nixosModules.developer
+                    ];
+
+                    ctrl-os.platform = ${e platform};
+                    ctrl-os.developer.enable = true;
+
+                    */
+                  ''
+                ]
+            ;
           }
         ;
       };
