@@ -42,6 +42,27 @@
                   )
                 ];
               }).config.system.build.isoImage;
+            radxaRock5BInstaller =
+              (inputs.nixpkgs.lib.nixosSystem {
+                modules = [
+                  (
+                    { modulesPath, ... }:
+                    {
+                      imports = [
+                        "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
+                        self.nixosModules.platform
+                        self.nixosModules.developer
+                      ];
+
+                      ctrl-os.developer.enable = true;
+                      ctrl-os.platform = "radxa-rock5b";
+                      nixpkgs.hostPlatform = "aarch64-linux";
+                      nixpkgs.buildPlatform = system;
+                      system.stateVersion = "25.11";
+                    }
+                  )
+                ];
+              }).config.system.build.isoImage;
           };
         };
     }
