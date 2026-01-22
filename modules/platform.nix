@@ -11,6 +11,6 @@
   };
 
   imports = [
-    ./platforms/nvidiaJetsonOrinNano.nix
+    ./platforms/devices/nvidia/jetson-orin-nano-super/default.nix
   ];
 }
