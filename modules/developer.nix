@@ -5,6 +5,9 @@ in
 {
   options = {
     ctrl-os.developer = {
+      # FIXME: we need to split out:
+      #    - CTRL-OS cache setup
+      #    - Opinionated defaults
       enable = lib.mkEnableOption "common CTRL-OS developer settings";
     };
   };
