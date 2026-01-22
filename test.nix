@@ -1,17 +1,25 @@
-{ self, inputs, system }:
+{ self, pkgs }:
 
 let
-  inherit (inputs.nixpkgs) lib;
+  inherit (pkgs) lib;
+  inherit (pkgs.stdenv.hostPlatform) system;
 
+  # Evaluate a NixOS configuration without relying on the Flakes entrypoint.
+  evalConfig =
+    { system ? null, ... }@config:
+    (import (pkgs.path + "/nixos/lib/eval-config.nix"))
+    (config // {
+      inherit system;
+    })
+  ;
+
+  # Borrow an arbitrary NixOS eval for evaluating the final `options` with
+  # our `platforms` module imported.
   inherit
-    (lib.nixosSystem {
-      modules = [
-        self.nixosModules.platform
-        {
-          # This does not matter, this is only used to peek at options.
-          nixpkgs.hostPlatform = "x86_64-linux";
-        }
-      ];
+    (evalConfig {
+      modules = [ self.nixosModules.platform ];
+      # The system does not matter, we only need to evaluate up to the options.
+      inherit (pkgs.stdenv.hostPlatform) system;
     })
     options
   ;
@@ -36,7 +44,7 @@ let
 
     let
       eval =
-        lib.nixosSystem {
+        evalConfig {
           modules = modules ++ [
             (
               { config, ... }:

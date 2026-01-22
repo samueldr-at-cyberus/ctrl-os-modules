@@ -21,7 +21,7 @@
         { pkgs, system, ... }:
         {
           legacyPackages = import ../test.nix {
-            inherit inputs self system;
+            inherit pkgs self;
           };
           packages = (import ./default.nix { inherit pkgs; }) // {
             jetsonOrinNanoInstaller =
