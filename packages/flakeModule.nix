@@ -20,6 +20,9 @@
       perSystem =
         { pkgs, ... }:
         {
+          legacyPackages = {
+            hardware = pkgs.callPackage ./hardware/packages.nix { };
+          };
           packages = import ./default.nix { inherit pkgs; };
         };
     }
