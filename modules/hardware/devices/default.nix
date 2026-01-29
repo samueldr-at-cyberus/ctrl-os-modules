@@ -15,6 +15,16 @@ in
     default = null;
   };
 
+  # Create `config.ctrl-os.hardware.devices.${name}.enable` for every device.
+  # The option can be used internally as needed.
+  options.ctrl-os.hardware.devices = builtins.mapAttrs (name: _: {
+    enable = lib.mkEnableOption "device support for the ${name}" // {
+      default = cfg.device == name;
+      internal = true;
+      readOnly = true;
+    };
+  }) deviceModules;
+
   imports = builtins.attrValues (
     builtins.mapAttrs (
       device: dir:
@@ -33,7 +43,7 @@ in
       # Finally, insert the `mkIf` in the module.
       moduleAttrsWithConfig
       // {
-        config = lib.mkIf (cfg.device == device) moduleAttrsWithConfig.config;
+        config = lib.mkIf (cfg.devices.${device}.enable) moduleAttrsWithConfig.config;
       }
     ) deviceModules
   );
