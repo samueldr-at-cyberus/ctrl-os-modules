@@ -17,26 +17,19 @@ let
       }
     );
 
-  # Borrow an arbitrary NixOS eval for evaluating the final `options` with
-  # our `hardware` module imported.
+  # Borrow an arbitrary NixOS eval for evaluating the final `config` with
+  # our `hardware` module imported. We're exposing some values for re-use
+  # internally, exactly for this use-case.
   inherit
     (evalConfig {
       modules = [ self.nixosModules.hardware ];
       # The system does not matter, we only need to evaluate up to the options.
       inherit (pkgs.stdenv.hostPlatform) system;
     })
-    options
+    config
     ;
 
-  devices =
-    # Get the device profile option
-    options.ctrl-os.hardware.device
-    # Unwrap the nullOr
-    .type.functor.payload
-    # Dig into the `enum`
-    .elemType.functor.payload
-    # And get the values
-    .values;
+  devices = config.ctrl-os.hardware.deviceList;
 
   # Evaluate the CTRL-OS device modules for the given `device`.
   # This returns the output from the `output` attribute path, with the evaluation
