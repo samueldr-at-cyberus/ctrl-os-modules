@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.ctrl-os.hardware.devices.nvidia-jetson-orin-nano-super;
@@ -7,6 +7,9 @@ in
   options = {
     ctrl-os.hardware.devices.nvidia-jetson-orin-nano-super = {
       enableOotModules = lib.mkEnableOption "the NVIDIA Out-Of-Tree kernel modules" // {
+        default = true;
+      };
+      enableProprietaryLibraries = lib.mkEnableOption "the NVIDIA graphical and ML drivers" // {
         default = true;
       };
     };
@@ -27,6 +30,31 @@ in
     boot.extraModulePackages = lib.mkMerge [
       (lib.mkIf cfg.enableOotModules [
         (config.boot.kernelPackages.callPackage ./nvidia-oot { })
+      ])
+    ];
+
+    # We can add the packages to the overlay even without enabling the
+    # *configuration* for the proprietary packags.
+    nixpkgs.overlays = [
+      (
+        final: super:
+        {
+          nvidia-jetson-orin-nano-super = {
+            nvidia-core = final.callPackage ./nvidia-core { };
+            nvidia-3d-core = final.callPackage ./nvidia-3d-core {
+              # FIXME: use a scope?
+              inherit (final.nvidia-jetson-orin-nano-super)
+                nvidia-core
+              ;
+            };
+          };
+        }
+      )
+    ];
+
+    hardware.graphics.extraPackages = lib.mkMerge [
+      (lib.mkIf cfg.enableProprietaryLibraries [
+        pkgs.nvidia-jetson-orin-nano-super.nvidia-3d-core
       ])
     ];
   };
