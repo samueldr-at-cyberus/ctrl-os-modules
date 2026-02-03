@@ -40,6 +40,7 @@ in
         final: super:
         {
           nvidia-jetson-orin-nano-super = {
+            nvidia-l4t = final.callPackage ./nvidia-l4t { };
             nvidia-core = final.callPackage ./nvidia-core { };
             nvidia-3d-core = final.callPackage ./nvidia-3d-core {
               # FIXME: use a scope?
