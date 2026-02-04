@@ -47,21 +47,20 @@ in
         {
           nvidia-jetson-orin-nano-super = {
             nvidia-l4t = final.callPackage ./nvidia-l4t { };
-            nvidia-core = final.callPackage ./nvidia-core { };
-            nvidia-3d-core = final.callPackage ./nvidia-3d-core {
-              # FIXME: use a scope?
-              inherit (final.nvidia-jetson-orin-nano-super)
-                nvidia-core
-              ;
-            };
           };
         }
       )
     ];
 
+    # FIXME: mkif
+    environment.etc = {                                                                               
+      "egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/"; 
+    };                                                                                                
+
+
     hardware.graphics.extraPackages = lib.mkMerge [
       (lib.mkIf cfg.enableProprietaryLibraries [
-        pkgs.nvidia-jetson-orin-nano-super.nvidia-3d-core
+        pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t
       ])
     ];
   };

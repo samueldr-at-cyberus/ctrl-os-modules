@@ -38,6 +38,7 @@ in
 
         # egl-wayland
         "nvidia-l4t-wayland" = "sha256-EY/21rNnF2SyuX+B5u15IFsV2Ct4euLc6qH3x1h7R8w=";
+        "nvidia-l4t-libwayland-egl1" = "sha256-rmcNTjLe6GXujlitMiXS8neLOEeXGIKqjmA9c3CjE/o=";
         # Dep for `nvidia-l4t-wayland`
         "nvidia-l4t-libwayland-client0" = "sha256-ZEu0d2Ylj5fWjH7QvF9BSMGC6CZmGlezuKF7f2Gql/M=";
         # Dep for `nvidia-l4t-wayland`
@@ -114,6 +115,8 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
 
+    set -x
+
     for el in usr/lib/aarch64-linux-gnu/*; do
       if test -L "$el"; then
         rm -v "$el"
@@ -125,15 +128,56 @@ stdenv.mkDerivation {
     mv -vt $out/share usr/share/doc
     mv -vt $out/lib usr/lib/aarch64-linux-gnu/*/*
 
-    # Fixup links we broke
-    (cd $out/lib
+    mkdir -vp $out/share/egl/egl_external_platform.d/
+    mv -t $out/share/egl/egl_external_platform.d/ ./usr/share/egl/egl_external_platform.d/nvidia_gbm.json
+
+    (
+      cd $out/lib
+
+      # Fixup links we broke
       for lib in tegra-udrm_gbm.so tegra_gbm.so nvidia-drm_gbm.so; do
        ln -fs libnvidia-allocator.so "$lib"
+      done
+
+      mkdir -vp ../share/vulkan/icd.d
+      mv -v nvidia_icd.json ../share/vulkan/icd.d/nvidia_icd.aarch64.json
+      substituteInPlace ../share/vulkan/icd.d/nvidia_icd.aarch64.json \
+        --replace-fail "libGLX_nvidia.so.0" "$PWD/libGLX_nvidia.so.0"
+
+      mkdir -vp ../share/glvnd/egl_vendor.d/
+      mv -v nvidia.json ../share/glvnd/egl_vendor.d/50_nvidia.json
+      substituteInPlace ../share/glvnd/egl_vendor.d/50_nvidia.json \
+        --replace-fail "libEGL_nvidia.so.0" "$PWD/libEGL_nvidia.so.0"
+
+      substituteInPlace ../share/egl/egl_external_platform.d/nvidia_gbm.json \
+        --replace-fail "libnvidia-egl-gbm.so.1" "$PWD/libnvidia-egl-gbm.so.1"
+
+      # Apparently `runtimeDependencies` only gets added to .so where the
+      # autoPatchelfHook changed the .so...
+      # Let's make sure any `dlopen`, such as found in `libnvos`, works.
+      for lib in *.so*; do
+        patchelf --add-rpath "$out/lib" "$lib"
       done
     )
 
     runHook postInstall
   '';
+
+  # FIXME:
+  # - runtimeDependencies doesn't actually work
+  # - autoPatchelfHook is missing stuff??
+  # - we'll call the autopatchelf bash function ourselves...
+  # - so we'll use dontAutoPatchelf...
+  # - AFAICT autopatchelf is ignoring our desire to add an rpath...
+
+  runtimeDependencies = [
+    (placeholder "out")
+  ];
+
+  # Don't strip "unnecessary" rpath values out
+  dontPatchELF = true;
+  # Also don't even try stripping vendor libraries.
+  dontStrip = true;
 
   meta = {
     licenses = [
@@ -141,16 +185,3 @@ stdenv.mkDerivation {
     ];
   };
 }
-
-/*
-
-ERROR: noBrokenSymlinks: the symlink .../lib/tegra-udrm_gbm.so points to a missing target: /nix/store/xd18hs3yk542rbd6axp567xzwsn5naqd-nvidia-l4t-36.4.7-20250918154033/nvidia/libnvidia-allocator.so
-ERROR: noBrokenSymlinks: the symlink .../lib/tegra_gbm.so points to a missing target: /nix/store/xd18hs3yk542rbd6axp567xzwsn5naqd-nvidia-l4t-36.4.7-20250918154033/nvidia/libnvidia-allocator.so
-ERROR: noBrokenSymlinks: the symlink .../lib/nvidia-drm_gbm.so points to a missing target: /nix/store/xd18hs3yk542rbd6axp567xzwsn5naqd-nvidia-l4t-36.4.7-20250918154033/nvidia/libnvidia-allocator.so
-
-
-error: auto-patchelf could not satisfy dependency libwayland-client.so.0 wanted by /nix/store/k76zs80pj84jln60dar1yfpm88gdwacm-nvidia-l4t-36.4.7-20250918154033/lib/libnvidia-egl-wayland.so.1.1.11
-error: auto-patchelf could not satisfy dependency libwayland-server.so.0 wanted by /nix/store/k76zs80pj84jln60dar1yfpm88gdwacm-nvidia-l4t-36.4.7-20250918154033/lib/libnvidia-egl-wayland.so.1.1.11
-
-*/
-
