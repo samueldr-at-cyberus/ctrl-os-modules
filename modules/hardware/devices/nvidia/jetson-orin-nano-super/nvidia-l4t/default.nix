@@ -13,6 +13,7 @@ in
 , expat
 , libxext
 , libX11
+, libGL
 , libdrm
 , libgbm
 , libffi
@@ -71,7 +72,7 @@ in
 # Listing found here:
 #   - https://repo.download.nvidia.com/jetson/
 
-stdenv.mkDerivation {
+stdenv.mkDerivation (finalAttrs: {
   pname = "nvidia-l4t";
   inherit version;
 
@@ -91,31 +92,31 @@ stdenv.mkDerivation {
     runHook postUnpack
   '';
 
-
-  buildInputs = [
-    # Dependencies being patchelf'd
+  # These dependencies are patchelf'd with the autoPatchelfHook.
+  # Their runpaths are also being added unconditionally for `dlopen()` reasons.
+  runtimeDependencies = [
     stdenv.cc.cc
     expat
     libxext
     libX11
+    libGL
     libdrm
     libgbm
     libffi
   ];
+
+  buildInputs =
+    # Dependencies being patchelf'd, to satisfy autoPatchelfHook
+    finalAttrs.runtimeDependencies
+  ;
 
   nativeBuildInputs = [
     autoPatchelfHook
     dpkg
   ];
 
-  autoPatchelfIgnoreMissingDeps = [
-    "libEGL.so.1"
-  ];
-
   installPhase = ''
     runHook preInstall
-
-    set -x
 
     for el in usr/lib/aarch64-linux-gnu/*; do
       if test -L "$el"; then
@@ -132,12 +133,9 @@ stdenv.mkDerivation {
     mv -t $out/share/egl/egl_external_platform.d/ ./usr/share/egl/egl_external_platform.d/nvidia_gbm.json
 
     (
-      cd $out/lib
+      set -x
 
-      # Fixup links we broke
-      for lib in tegra-udrm_gbm.so tegra_gbm.so nvidia-drm_gbm.so; do
-       ln -fs libnvidia-allocator.so "$lib"
-      done
+      cd $out/lib
 
       mkdir -vp ../share/vulkan/icd.d
       mv -v nvidia_icd.json ../share/vulkan/icd.d/nvidia_icd.aarch64.json
@@ -152,27 +150,45 @@ stdenv.mkDerivation {
       substituteInPlace ../share/egl/egl_external_platform.d/nvidia_gbm.json \
         --replace-fail "libnvidia-egl-gbm.so.1" "$PWD/libnvidia-egl-gbm.so.1"
 
-      # Apparently `runtimeDependencies` only gets added to .so where the
-      # autoPatchelfHook changed the .so...
-      # Let's make sure any `dlopen`, such as found in `libnvos`, works.
-      for lib in *.so*; do
-        patchelf --add-rpath "$out/lib" "$lib"
+      mkdir -p gbm
+      # Fixup libnvidia-allocator links we broke
+      for lib in tegra-udrm_gbm.so tegra_gbm.so nvidia-drm_gbm.so; do
+        mv -t gbm "$lib"
+        ln -fs ../libnvidia-allocator.so "gbm/$lib"
       done
     )
 
     runHook postInstall
+
+    # Work around autoPatchelfHook idiosyncrasy...
+    # We are not handling the whole patching ourselves since we want to rely
+    # on the autoPatchelfHook "missing dependencies" support.
+    fixupNvidiaL4T() {
+      (
+        set -x
+        cd $out/lib
+
+        rpath="$(
+          # Add "self" to the rpath
+          printf "${placeholder "out"}/lib"
+          # And all runtimeDependencies
+          printf ":%s" ''${runtimeDependencies[@]/%//lib}
+        )"
+
+        # Apparently `runtimeDependencies` and `appendRunPaths` are only
+        # effective for .so where the autoPatchelfHook changed the .so...
+        # Let's make sure any `dlopen`, such as found in `libnvos`, works.
+        for lib in $(find -type f -name '*.so*'); do
+          patchelf --add-rpath "$rpath" "$lib"
+        done
+      )
+    }
+
+    # This needs to run *after* the autoPatchelfHook...
+    # This is why we're adding this "late".
+    printf "Adding fixupNvidiaL4T hook\n"
+    postFixupHooks+=( fixupNvidiaL4T )
   '';
-
-  # FIXME:
-  # - runtimeDependencies doesn't actually work
-  # - autoPatchelfHook is missing stuff??
-  # - we'll call the autopatchelf bash function ourselves...
-  # - so we'll use dontAutoPatchelf...
-  # - AFAICT autopatchelf is ignoring our desire to add an rpath...
-
-  runtimeDependencies = [
-    (placeholder "out")
-  ];
 
   # Don't strip "unnecessary" rpath values out
   dontPatchELF = true;
@@ -184,4 +200,4 @@ stdenv.mkDerivation {
       lib.licenses.unfree
     ];
   };
-}
+})
