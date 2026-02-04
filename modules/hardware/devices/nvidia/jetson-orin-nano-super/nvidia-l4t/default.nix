@@ -10,6 +10,7 @@ in
 , autoPatchelfHook
 , dpkg
 
+, coreutils
 , expat
 , libxext
 , libX11
@@ -55,6 +56,9 @@ in
         "nvidia-l4t-nvsci" = "sha256-+X4RMGKlA0FuEVTGGnnoQSe8Kjh4M975C4AoyxxNFE8=";
         # libnvidia-ml
         "nvidia-l4t-nvml" = "sha256-+fRq0H/aIiKaAab/C/njF70U9QmFF7xywLdqXGBfxfA=";
+
+        # Configuration files that end-up being required
+        "nvidia-l4t-init" = "sha256-am/ede7X+URfzYysbSOtUO/J5shM46V3TwaVXzTsL44=";
       };
     in
     builtins.mapAttrs (
@@ -130,7 +134,12 @@ stdenv.mkDerivation (finalAttrs: {
     mv -vt $out/lib usr/lib/aarch64-linux-gnu/*/*
 
     mkdir -vp $out/share/egl/egl_external_platform.d/
-    mv -t $out/share/egl/egl_external_platform.d/ ./usr/share/egl/egl_external_platform.d/nvidia_gbm.json
+    mv -t $out/share/egl/egl_external_platform.d/ usr/share/egl/egl_external_platform.d/nvidia_gbm.json
+
+    mkdir -vp "$out/lib/udev/rules.d"
+    mv -t $out/lib/udev/rules.d etc/udev/rules.d/99-tegra-devices.rules
+    substituteInPlace $out/lib/udev/rules.d/99-tegra-devices.rules \
+      --replace-fail "/bin/mknod" "${lib.getExe' coreutils "mknod"}"
 
     (
       set -x
