@@ -33,6 +33,12 @@ in
       ])
     ];
 
+    boot.blacklistedKernelModules = [
+      # FIXME: figure out ***why*** vendor blacklists it.
+      # Source: nvidia-l4t-init_36.4.4-20250616085344_arm64:etc/modprobe.d/denylist-tpm-ftpm-tee.conf
+      "tpm_ftpm_tee"
+    ];
+
     # We can add the packages to the overlay even without enabling the
     # *configuration* for the proprietary packags.
     nixpkgs.overlays = [
