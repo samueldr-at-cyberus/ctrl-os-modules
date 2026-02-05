@@ -9,6 +9,9 @@ in
       enableOotModules = lib.mkEnableOption "the NVIDIA Out-Of-Tree kernel modules" // {
         default = true;
       };
+      # Reminder device enablement modules should not set the unfree software option.
+      # The module *must* fail with the unfree software error.
+      # The user must make the informed decision about enabling unfree software.
       enableProprietaryLibraries = lib.mkEnableOption "the NVIDIA graphical and ML drivers" // {
         default = true;
       };
@@ -31,12 +34,24 @@ in
       (lib.mkIf cfg.enableOotModules [
         (config.boot.kernelPackages.callPackage ./nvidia-oot { })
       ])
+      # FIXME: mkif ?
+      (lib.mkIf true [
+        pkgs.nvidia-jetson-orin-nano-super.nvidia-open-gpu-kernel-modules
+      ])
     ];
+
 
     boot.blacklistedKernelModules = [
       # FIXME: figure out ***why*** vendor blacklists it.
       # Source: nvidia-l4t-init_36.4.4-20250616085344_arm64:etc/modprobe.d/denylist-tpm-ftpm-tee.conf
-      "tpm_ftpm_tee"
+      # "tpm_ftpm_tee"
+      # XXX was it blacklisting this that made the device unreliable to boot once past "switch root"?
+
+      # Prevent upstream audio drivers from being loaded.
+      "snd_soc_tegra_audio_graph_card"
+
+      # XXX when using proprietary drivers
+      "tegra_drm"
     ];
 
     # We can add the packages to the overlay even without enabling the
@@ -46,6 +61,13 @@ in
         final: super:
         {
           nvidia-jetson-orin-nano-super = {
+            nvidia-open-gpu-kernel-modules =
+              config.boot.kernelPackages.nvidiaPackages.stable.overrideAttrs(oldAttrs: {
+                buildInputs = (oldAttrs.buildInputs or []) ++ [
+                  final.nvidia-jetson-orin-nano-super.nvidia-oot
+                ];
+              })
+            ;
             nvidia-oot = config.boot.kernelPackages.callPackage ./nvidia-oot { };
             nvidia-l4t = final.callPackage ./nvidia-l4t { };
             nvidia-l4t-firmware = final.callPackage ./nvidia-l4t-firmware { };
@@ -58,6 +80,19 @@ in
     environment.etc = {                                                                               
       "egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/"; 
     };                                                                                                
+    # FIXME: mkif
+    services.udev.packages = [
+      pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t
+    ];
+    # FIXME: mkif
+    hardware.firmware = [
+      pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t-firmware
+    ];
+    boot.kernelParams = [
+      # Prevent simple-framebuffer from picking-up the framebuffer.
+      # FIXME: this could be breaking the proprietary drivers?
+      "initcall_blacklist=sysfb_init"
+    ];
 
 
     hardware.graphics.extraPackages = lib.mkMerge [
