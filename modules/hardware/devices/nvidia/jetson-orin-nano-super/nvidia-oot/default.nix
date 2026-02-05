@@ -19,6 +19,7 @@
         "linux-hwpm" = "sha256-LrCtuQIbHxBibJaMnrNYEAegtezUDUPGiHJDW+0qHA8=";
         "linux-nvgpu" = "sha256-zvnTygjF8BUNxaqcU4Mt6kAwngFpArM5timpjw074uQ=";
         "linux-nv-oot" = "sha256-Vt4ef0GIFpk34IPCIL7/R6Jsssd90GXLKonIY8P4e5s=";
+        "tegra/kernel-src/nv-kernel-display-driver" = "sha256-ACxHLNEcSoYOZw7LQQUrFkD+7sLIDpeCHcjJ954Rl6E=";
       };
     in
     builtins.mapAttrs (
@@ -43,12 +44,17 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     runHook preUnpack
 
     ${lib.concatStringsSep "\n" (
-      lib.mapAttrsToList (name: src: ''
-        printf '\n:: Copying %q to workspace\n' "${name}"
-        mkdir -p ./${name}
-        cp -rt ./${name} ${src}/*
-        chmod -R +w ./${name}
-      '') srcs
+      lib.mapAttrsToList (repo: src:
+        let
+          name = builtins.baseNameOf repo;
+        in
+        ''
+          printf '\n:: Copying %q to workspace\n' "${name}"
+          mkdir -p ./${name}
+          cp -rt ./${name} ${src}/*
+          chmod -R +w ./${name}
+        ''
+      ) srcs
     )}
     export workspace="$PWD"
 
@@ -171,6 +177,17 @@ kernel.stdenv.mkDerivation (finalAttrs: {
 
     printf '\n :: Building nvgpu\n'
     _make "M=$workspace/linux-nvgpu/drivers/gpu/nvgpu"
+
+    printf '\n :: Building nv-kernel-display-driver'
+    # NOTE: `NV_BUILD_*` are used in newer releases.
+    #       Beforehand, `HOSTNAME` is used.
+    #_make -C "$workspace/nv-kernel-display-driver" \
+    #  HOSTNAME="nixos" \
+    #  NV_BUILD_HOST="nixos" \
+    #  NV_BUILD_USER="nixos"
+
+    # ?
+    _make "$workspace/nv-kernel-display-driver/kernel-open"
 
     runHook postBuild
   '';
