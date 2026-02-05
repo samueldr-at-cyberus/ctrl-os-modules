@@ -18,6 +18,7 @@ in
 , libdrm
 , libgbm
 , libffi
+, dbus
 
 ,
   # `srcs` is exposed in `passthru` to allow easily overriding `srcs`.
@@ -107,6 +108,8 @@ stdenv.mkDerivation (finalAttrs: {
     libdrm
     libgbm
     libffi
+    # Used at runtime by `libnvidia-*glcore.so`...
+    dbus.lib
   ];
 
   buildInputs =
