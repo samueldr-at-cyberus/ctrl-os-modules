@@ -55,7 +55,6 @@ kernel.stdenv.mkDerivation (finalAttrs: {
           chmod -R +w ./${name}
         ''
         ) (srcs//{
-          "tegra/kernel-src/nv-kernel-display-driver" = builtins.fetchGit /Users/samuel/tmp/nvidia/git/nv-kernel-display-driver;
         })
     )}
     export workspace="$PWD"
