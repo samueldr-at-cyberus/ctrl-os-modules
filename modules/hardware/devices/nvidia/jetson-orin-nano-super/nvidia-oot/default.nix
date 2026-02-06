@@ -54,7 +54,9 @@ kernel.stdenv.mkDerivation (finalAttrs: {
           cp -rt ./${name} ${src}/*
           chmod -R +w ./${name}
         ''
-      ) srcs
+        ) (srcs//{
+          "tegra/kernel-src/nv-kernel-display-driver" = builtins.fetchGit /Users/samuel/tmp/nvidia/git/nv-kernel-display-driver;
+        })
     )}
     export workspace="$PWD"
 
@@ -149,6 +151,8 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     "NV_OOT_REALTEK_R8126_SKIP_BUILD=y"
     # And this one which is simply not needed.
     "NV_OOT_BLOCK_TEGRA_VIRT_STORAGE_SKIP_BUILD=y"
+
+    "V=1"
   ];
 
   buildFlags = [
@@ -210,6 +214,14 @@ kernel.stdenv.mkDerivation (finalAttrs: {
 
       # NOTE: conftest.sh is being ran in here...
       printf '\n :: Building nv-kernel-display-driver module\n'
+      _make -C "$workspace/nv-kernel-display-driver/kernel-open" \
+        "IGNORE_PREEMPT_RT_PRESENCE=1" \
+        "SYSSRC=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
+        "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
+        "NV_KERNEL_SOURCES=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
+        "NV_KERNEL_OUTPUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
+        SYSSRCHOST1X="$workspace/linux-nv-oot/drivers/gpu/host1x/include" \
+        V=1
     else
 
       printf '\n :: Building nv-kernel-display-driver module\n'
