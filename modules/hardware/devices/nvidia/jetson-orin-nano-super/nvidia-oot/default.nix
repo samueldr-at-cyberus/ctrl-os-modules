@@ -213,10 +213,19 @@ kernel.stdenv.mkDerivation (finalAttrs: {
 
       # NOTE: conftest.sh is being ran in here...
       printf '\n :: Building nv-kernel-display-driver module\n'
-      _make -C "$workspace/nv-kernel-display-driver/kernel-open" \
-        "SYSSRC=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
-        "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
+      _make \
+        -C "$workspace/nv-kernel-display-driver/kernel-open" \
+        SYSSRC="${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
+        SYSOUT="${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
         SYSSRCHOST1X="$workspace/linux-nv-oot/drivers/gpu/host1x/include" \
+        KCFLAGS=${lib.escapeShellArg (
+          lib.concatStringsSep " " [
+            "-std=gnu11"
+            "-I$(srctree.nvidia-oot)/include"
+            #"-Wno-error=incompatible-pointer-types"
+            #"-fshort-wchar"
+          ]
+        )} \
         V=1
     else
 
