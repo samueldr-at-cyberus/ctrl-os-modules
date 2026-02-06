@@ -225,10 +225,7 @@ kernel.stdenv.mkDerivation (finalAttrs: {
         SYSSRCHOST1X="$workspace/linux-nv-oot/drivers/gpu/host1x/include" \
         KCFLAGS=${lib.escapeShellArg (
           lib.concatStringsSep " " [
-            "-std=gnu11"
             "-I$(srctree.nvidia-oot)/include"
-            #"-Wno-error=incompatible-pointer-types"
-            #"-fshort-wchar"
           ]
         )} \
         V=1
