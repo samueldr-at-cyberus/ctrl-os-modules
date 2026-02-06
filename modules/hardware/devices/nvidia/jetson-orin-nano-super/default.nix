@@ -77,9 +77,9 @@ in
     ];
 
     # FIXME: mkif
-    environment.etc = {                                                                               
-      "egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/"; 
-    };                                                                                                
+    environment.etc = {
+      "egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/";
+    };
     # FIXME: mkif
     services.udev.packages = [
       pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t
