@@ -49,7 +49,7 @@ kernel.stdenv.mkDerivation (finalAttrs: {
           name = builtins.baseNameOf repo;
         in
         ''
-          printf '\n:: Copying %q to workspace\n' "${name}"
+          printf '\n :: Copying %q to workspace\n' "${name}"
           mkdir -p ./${name}
           cp -rt ./${name} ${src}/*
           chmod -R +w ./${name}
@@ -66,11 +66,11 @@ kernel.stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = kernel.moduleBuildDependencies;
 
   postPatch = ''
-    printf '\n:: Disabling nvethernet driver...\n'
+    printf '\n :: Disabling nvethernet driver...\n'
     # Not needed on supported hardware, requires additional repository setup.
     echo "# disabled" > "$workspace/linux-nv-oot/drivers/net/ethernet/nvidia/nvethernet/Makefile"
 
-    printf '\n:: Ensuring open kernel modules build succeeds\n'
+    printf '\n :: Ensuring open kernel modules build succeeds\n'
     # The open display drivers build is kinda broken, and needs to happen in two stages
     #   1. build the "OS agnostic portions"
     #   2. build the Linux kernel modules
@@ -83,6 +83,11 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     # Vendor merges the kernel symvers with oot symvers.
     substituteInPlace nv-kernel-display-driver/kernel-open/conftest.sh \
       --replace-fail '"$OUTPUT/Module.symvers" >/dev/null' '"$OUTPUT/Module.symvers" "$workspace/linux-nv-oot/Module.symvers" >/dev/null'
+
+    # Patch in our added CFLAGS into the display driver conftest.
+    # This differs from the nv-oot conftest.
+    substituteInPlace nv-kernel-display-driver/kernel-open/Kbuild \
+      --replace-fail 'NV_CONFTEST_CFLAGS =' 'NV_CONFTEST_CFLAGS = $(KCFLAGS)'
   '';
 
   configurePhase = ''
@@ -156,8 +161,6 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     "NV_OOT_REALTEK_R8126_SKIP_BUILD=y"
     # And this one which is simply not needed.
     "NV_OOT_BLOCK_TEGRA_VIRT_STORAGE_SKIP_BUILD=y"
-
-    "V=1"
   ];
 
   buildFlags = [
@@ -211,10 +214,8 @@ kernel.stdenv.mkDerivation (finalAttrs: {
         "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
         'MODLIB=$(out)/lib/modules/${kernel.modDirVersion}' \
         "DATE=" \
+        KERNELRELEASE=""
         LOCALVERSION='$(version)' \
-        KERNELRELEASE="" \
-          V=1 \
-        'NV_VERBOSE=$(V)'
 
       # NOTE: conftest.sh is being ran in here...
       printf '\n :: Building nv-kernel-display-driver module\n'
@@ -226,9 +227,12 @@ kernel.stdenv.mkDerivation (finalAttrs: {
         KCFLAGS=${lib.escapeShellArg (
           lib.concatStringsSep " " [
             "-I$(srctree.nvidia-oot)/include"
+            # The following three flags are used to make conftest work.
+            "-std=gnu11"
+            "-fshort-wchar"
+            "-Wno-error=incompatible-pointer-types"
           ]
-        )} \
-        V=1
+        )}
     else
 
       printf '\n :: Building nv-kernel-display-driver module\n'
