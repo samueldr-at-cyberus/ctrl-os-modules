@@ -67,6 +67,15 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     printf '\n:: Disabling nvethernet driver...\n'
     # Not needed on supported hardware, requires additional repository setup.
     echo "# disabled" > "$workspace/linux-nv-oot/drivers/net/ethernet/nvidia/nvethernet/Makefile"
+
+    printf '\n:: Ensuring open kernel modules build succeeds\n'
+    # The open display drivers build is kinda broken, and needs to happen in two stages
+    #   1. build the "OS agnostic portions"
+    #   2. build the Linux kernel modules
+    # The handling for stage 2 loses all the makeFlags.
+    # So instead we'll just run the command ourselves...
+    substituteInPlace nv-kernel-display-driver/Makefile \
+      --replace-fail '$(MAKE) -C kernel-open modules' '# (make modules handled externally)'
   '';
 
   configurePhase = ''
@@ -178,16 +187,34 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     printf '\n :: Building nvgpu\n'
     _make "M=$workspace/linux-nvgpu/drivers/gpu/nvgpu"
 
-    printf '\n :: Building nv-kernel-display-driver'
-    # NOTE: `NV_BUILD_*` are used in newer releases.
-    #       Beforehand, `HOSTNAME` is used.
-    #_make -C "$workspace/nv-kernel-display-driver" \
-    #  HOSTNAME="nixos" \
-    #  NV_BUILD_HOST="nixos" \
-    #  NV_BUILD_USER="nixos"
+    # This build step differs from the three previous ones, just as it does in the downstream oot Makefile.
+    if [[ "$curPhase" == "buildPhase" ]]; then
+      printf '\n :: Building nv-kernel-display-driver OS-agnostic portions\n'
 
-    # ?
-    _make "$workspace/nv-kernel-display-driver/kernel-open"
+      # `NV_BUILD_HOSTNAME` is used in newer releases, `HOSTNAME` was previously used.
+      _make -C "$workspace/nv-kernel-display-driver" \
+        HOSTNAME="nixos" \
+        NV_BUILD_HOST="nixos" \
+        NV_BUILD_USER="nixos" \
+        TARGET_OS=Linux \
+        TARGET_ARCH=${kernel.stdenv.hostPlatform.uname.processor} \
+        "IGNORE_PREEMPT_RT_PRESENCE=1" \
+        "SYSSRC=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
+        "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
+        'MODLIB=$(out)/lib/modules/${kernel.modDirVersion}' \
+        "DATE=" \
+        LOCALVERSION='$(version)' \
+        KERNELRELEASE="" \
+          V=1 \
+        'NV_VERBOSE=$(V)'
+
+      # NOTE: conftest.sh is being ran in here...
+      printf '\n :: Building nv-kernel-display-driver module\n'
+    else
+
+      printf '\n :: Building nv-kernel-display-driver module\n'
+      _make "M=$workspace/nv-kernel-display-driver/kernel-open"
+    fi
 
     runHook postBuild
   '';
@@ -203,7 +230,6 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     let
       replacements = {
         "buildFlags" = "installFlags installTargets";
-        "buildPhase" = "installPhase";
         "postBuild" = "postInstall";
         "preBuild" = "preInstall";
         "Building" = "Installing";
@@ -250,6 +276,11 @@ kernel.stdenv.mkDerivation (finalAttrs: {
       # linux-nv-oot
       # SPDX-License-Identifier: BSD-3-Clause
       lib.licenses.bsd3
+
+      # nv-kernel-display-driver
+      # SPDX-License-Identifier: MIT
+      # However, when linked together to form a Linux kernel module, the resulting Linux
+      # kernel module is dual licensed as MIT/GPLv2.
     ];
 
     # Vendor supports up to 6.15 as of 2026-01-04.
