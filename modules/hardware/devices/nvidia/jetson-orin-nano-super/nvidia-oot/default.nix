@@ -202,7 +202,6 @@ kernel.stdenv.mkDerivation (finalAttrs: {
         NV_BUILD_USER="nixos" \
         TARGET_OS=Linux \
         TARGET_ARCH=${kernel.stdenv.hostPlatform.uname.processor} \
-        "IGNORE_PREEMPT_RT_PRESENCE=1" \
         "SYSSRC=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
         "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
         'MODLIB=$(out)/lib/modules/${kernel.modDirVersion}' \
@@ -215,11 +214,8 @@ kernel.stdenv.mkDerivation (finalAttrs: {
       # NOTE: conftest.sh is being ran in here...
       printf '\n :: Building nv-kernel-display-driver module\n'
       _make -C "$workspace/nv-kernel-display-driver/kernel-open" \
-        "IGNORE_PREEMPT_RT_PRESENCE=1" \
         "SYSSRC=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
         "SYSOUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
-        "NV_KERNEL_SOURCES=${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
-        "NV_KERNEL_OUTPUT=${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
         SYSSRCHOST1X="$workspace/linux-nv-oot/drivers/gpu/host1x/include" \
         V=1
     else
