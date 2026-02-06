@@ -78,6 +78,11 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     # So instead we'll just run the command ourselves...
     substituteInPlace nv-kernel-display-driver/Makefile \
       --replace-fail '$(MAKE) -C kernel-open modules' '# (make modules handled externally)'
+
+    # Add the OOT symbols for feature detection.
+    # Vendor merges the kernel symvers with oot symvers.
+    substituteInPlace nv-kernel-display-driver/kernel-open/conftest.sh \
+      --replace-fail '"$OUTPUT/Module.symvers" >/dev/null' '"$OUTPUT/Module.symvers" "$workspace/linux-nv-oot/Module.symvers" >/dev/null'
   '';
 
   configurePhase = ''
