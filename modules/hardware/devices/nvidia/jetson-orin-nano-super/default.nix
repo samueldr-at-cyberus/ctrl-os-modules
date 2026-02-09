@@ -82,6 +82,11 @@ in
                   rev = "rel-36_eng_2026-01-04";
                   hash = "sha256-Xr2lscaMEwKNn8IA2CCM4NzR6jNVsqeiaxp9onuTxsI=";
                 };
+                structuredExtraConfig = {
+                  # Driver build is broken from backport of new drivers.
+                  # ../drivers/media/pci/intel/ipu6/../ipu-dma.c:53:17: error: implicit declaration of function 'clflush_cache_range'; did you mean 'flush_cache_range'? [-Werror=implicit-function-declaration]
+                  VIDEO_INTEL_IPU6 = lib.kernel.no;
+                };
               }
             ;
             nvidia-l4t-kernelPackages =
