@@ -30,6 +30,8 @@ in
       "phy-tegra-xusb"
     ];
 
+    boot.kernelPackages = pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t-kernelPackages;
+
     boot.extraModulePackages = lib.mkMerge [
       (lib.mkIf cfg.enableOotModules [
         (config.boot.kernelPackages.callPackage ./nvidia-oot { })
