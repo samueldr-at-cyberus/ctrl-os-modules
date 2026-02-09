@@ -71,6 +71,23 @@ in
             nvidia-oot = config.boot.kernelPackages.callPackage ./nvidia-oot { };
             nvidia-l4t = final.callPackage ./nvidia-l4t { };
             nvidia-l4t-firmware = final.callPackage ./nvidia-l4t-firmware { };
+
+            nvidia-l4t-kernel =
+              final.buildLinux {
+                version = "5.15.185+rel-36_eng_2026-01-04";
+                modDirVersion = "5.15.185";
+                src = final.fetchFromGitLab {
+                  owner = "nvidia";
+                  repo = "nv-tegra/3rdparty/canonical/linux-jammy";
+                  rev = "rel-36_eng_2026-01-04";
+                  hash = "sha256-Xr2lscaMEwKNn8IA2CCM4NzR6jNVsqeiaxp9onuTxsI=";
+                };
+              }
+            ;
+            nvidia-l4t-kernelPackages =
+              final.linuxPackagesFor
+              final.nvidia-jetson-orin-nano-super.nvidia-l4t-kernel
+            ;
           };
         }
       )
