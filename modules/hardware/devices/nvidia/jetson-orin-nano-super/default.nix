@@ -59,13 +59,6 @@ in
         final: super:
         {
           nvidia-jetson-orin-nano-super = {
-            nvidia-open-gpu-kernel-modules =
-              config.boot.kernelPackages.nvidiaPackages.stable.overrideAttrs(oldAttrs: {
-                buildInputs = (oldAttrs.buildInputs or []) ++ [
-                  final.nvidia-jetson-orin-nano-super.nvidia-oot
-                ];
-              })
-            ;
             nvidia-oot = config.boot.kernelPackages.callPackage ./nvidia-oot { };
             nvidia-l4t = final.callPackage ./nvidia-l4t { };
             nvidia-l4t-firmware = final.callPackage ./nvidia-l4t-firmware { };
