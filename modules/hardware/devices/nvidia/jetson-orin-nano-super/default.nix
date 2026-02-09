@@ -74,7 +74,7 @@ in
 
             nvidia-l4t-kernel =
               final.buildLinux {
-                version = "5.15.185+rel-36_eng_2026-01-04";
+                version = "5.15.185.rel-36_eng_2026-01-04";
                 modDirVersion = "5.15.185";
                 src = final.fetchFromGitLab {
                   owner = "nvidia";
