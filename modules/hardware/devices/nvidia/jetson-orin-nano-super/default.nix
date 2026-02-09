@@ -34,10 +34,6 @@ in
       (lib.mkIf cfg.enableOotModules [
         (config.boot.kernelPackages.callPackage ./nvidia-oot { })
       ])
-      # FIXME: mkif ?
-      (lib.mkIf true [
-        pkgs.nvidia-jetson-orin-nano-super.nvidia-open-gpu-kernel-modules
-      ])
     ];
 
 
