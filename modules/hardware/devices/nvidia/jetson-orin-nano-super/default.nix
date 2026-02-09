@@ -108,6 +108,7 @@ in
     boot.kernelParams = [
       # Prevent simple-framebuffer from picking-up the framebuffer.
       # FIXME: this could be breaking the proprietary drivers?
+      # FIXME: This doesn't work anyway on DT platforms.
       "initcall_blacklist=sysfb_init"
     ];
 
