@@ -86,6 +86,61 @@ in
                   # Driver build is broken from backport of new drivers.
                   # ../drivers/media/pci/intel/ipu6/../ipu-dma.c:53:17: error: implicit declaration of function 'clflush_cache_range'; did you mean 'flush_cache_range'? [-Werror=implicit-function-declaration]
                   VIDEO_INTEL_IPU6 = lib.kernel.no;
+
+                  # Vendor assumes this configuration is used.
+                  FB_SIMPLE = lib.kernel.yes;
+                  DRM_SIMPLEDRM = lib.mkForce lib.kernel.no;
+
+                  ARCH_TEGRA = lib.kernel.yes;
+                  # Minify build
+                  ARCH_ACTIONS = lib.kernel.no;
+                  ARCH_SUNXI = lib.kernel.no;
+                  ARCH_ALPINE = lib.kernel.no;
+                  ARCH_APPLE = lib.kernel.no;
+                  ARCH_BCM2835 = lib.kernel.no;
+                  ARCH_BCM4908 = lib.kernel.no;
+                  ARCH_BCM_IPROC = lib.kernel.no;
+                  ARCH_BERLIN = lib.kernel.no;
+                  ARCH_BRCMSTB = lib.kernel.no;
+                  ARCH_EXYNOS = lib.kernel.no;
+                  ARCH_K3 = lib.kernel.no;
+                  ARCH_LAYERSCAPE = lib.kernel.no;
+                  ARCH_LG1K = lib.kernel.no;
+                  ARCH_HISI = lib.kernel.no;
+                  ARCH_KEEMBAY = lib.kernel.no;
+                  ARCH_MEDIATEK = lib.kernel.no;
+                  ARCH_MESON = lib.kernel.no;
+                  ARCH_MVEBU = lib.kernel.no;
+                  ARCH_MXC = lib.kernel.no;
+                  ARCH_QCOM = lib.kernel.no;
+                  ARCH_RENESAS = lib.kernel.no;
+                  ARCH_ROCKCHIP = lib.kernel.no;
+                  ARCH_S32 = lib.kernel.no;
+                  ARCH_SEATTLE = lib.kernel.no;
+                  ARCH_INTEL_SOCFPGA = lib.kernel.no;
+                  ARCH_SYNQUACER = lib.kernel.no;
+                  ARCH_SPRD = lib.kernel.no;
+                  ARCH_THUNDER = lib.kernel.no;
+                  ARCH_THUNDER2 = lib.kernel.no;
+                  ARCH_UNIPHIER = lib.kernel.no;
+                  ARCH_VEXPRESS = lib.kernel.no;
+                  ARCH_VISCONTI = lib.kernel.no;
+                  ARCH_XGENE = lib.kernel.no;
+                  ARCH_ZYNQMP = lib.kernel.no;
+
+                  # Fallout from disabling some architectures...
+                  FSL_MC_UAPI_SUPPORT = lib.mkForce lib.kernel.no;
+                  NET_VENDOR_MEDIATEK = lib.mkForce lib.kernel.no;
+                  SUN8I_DE2_CCU = lib.mkForce lib.kernel.no;
+
+                  # Other stuff
+                  DRM_AMDGPU = lib.mkForce lib.kernel.no;
+                  DRM_MESON = lib.mkForce lib.kernel.no;
+                  DRM_MSM = lib.mkForce lib.kernel.no;
+                  DRM_MEDIATEK = lib.mkForce lib.kernel.no;
+                  DRM_RADEON = lib.mkForce lib.kernel.no;
+                  DRM_SUN4I = lib.mkForce lib.kernel.no;
+                  DRM_VC4 = lib.mkForce lib.kernel.no;
                 };
               }
             ;
