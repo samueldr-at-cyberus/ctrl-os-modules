@@ -86,10 +86,13 @@ in
                   # Minify build
                   ARCH_ACTIONS = lib.kernel.no;
                   ARCH_SUNXI = lib.kernel.no;
+                  SUN8I_DE2_CCU = lib.mkForce (lib.kernel.option lib.kernel.no);
                   ARCH_ALPINE = lib.kernel.no;
                   ARCH_APPLE = lib.kernel.no;
                   ARCH_BCM2835 = lib.kernel.no;
                   ARCH_BCM4908 = lib.kernel.no;
+                  DRM_VC4 = lib.mkForce lib.kernel.no;
+                  DRM_VC4_HDMI_CEC = lib.mkForce (lib.kernel.option lib.kernel.no);
                   ARCH_BCM_IPROC = lib.kernel.no;
                   ARCH_BERLIN = lib.kernel.no;
                   ARCH_BRCMSTB = lib.kernel.no;
@@ -100,6 +103,7 @@ in
                   ARCH_HISI = lib.kernel.no;
                   ARCH_KEEMBAY = lib.kernel.no;
                   ARCH_MEDIATEK = lib.kernel.no;
+                  NET_VENDOR_MEDIATEK = lib.mkForce (lib.kernel.option lib.kernel.no);
                   ARCH_MESON = lib.kernel.no;
                   ARCH_MVEBU = lib.kernel.no;
                   ARCH_MXC = lib.kernel.no;
@@ -120,18 +124,18 @@ in
                   ARCH_ZYNQMP = lib.kernel.no;
 
                   # Fallout from disabling some architectures...
-                  FSL_MC_UAPI_SUPPORT = lib.mkForce lib.kernel.no;
-                  NET_VENDOR_MEDIATEK = lib.mkForce lib.kernel.no;
-                  SUN8I_DE2_CCU = lib.mkForce lib.kernel.no;
+                  FSL_MC_UAPI_SUPPORT = lib.mkForce (lib.kernel.option lib.kernel.no);
 
                   # Other stuff
-                  DRM_AMDGPU = lib.mkForce lib.kernel.no;
-                  DRM_MESON = lib.mkForce lib.kernel.no;
-                  DRM_MSM = lib.mkForce lib.kernel.no;
-                  DRM_MEDIATEK = lib.mkForce lib.kernel.no;
-                  DRM_RADEON = lib.mkForce lib.kernel.no;
-                  DRM_SUN4I = lib.mkForce lib.kernel.no;
-                  DRM_VC4 = lib.mkForce lib.kernel.no;
+                  DRM_AMD_ACP = lib.mkForce (lib.kernel.option lib.kernel.no);
+                  DRM_AMD_DC_HDCP = lib.mkForce (lib.kernel.option lib.kernel.no);
+                  DRM_AMD_DC_SI = lib.mkForce (lib.kernel.option lib.kernel.no);
+                  DRM_AMDGPU_CIK = lib.mkForce (lib.kernel.option lib.kernel.no);
+                  DRM_AMDGPU = lib.mkForce (lib.kernel.option lib.kernel.no);
+                  DRM_AMDGPU_SI = lib.mkForce (lib.kernel.option lib.kernel.no);
+                  DRM_AMDGPU_USERPTR = lib.mkForce (lib.kernel.option lib.kernel.no);
+                  DRM_RADEON = lib.mkForce (lib.kernel.option lib.kernel.no);
+                  HSA_AMD = lib.mkForce (lib.kernel.option lib.kernel.no);
                 };
               }
             ;
