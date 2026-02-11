@@ -48,16 +48,13 @@ in
       # Prevent upstream audio drivers from being loaded.
       "snd_soc_tegra_audio_graph_card"
 
-      ## XXX when using proprietary drivers
-      #"tegra_drm"
-      # XXX
+      # This is blacklisted so it doesn't get auto-loaded.
+      # The `tegra_drm` module will load it as needed.
       "nvidia_drm"
     ];
 
     boot.kernelModules = [
       "tegra_drm"
-      # XXX Must not be loaded eagerly?
-      #"nvidia_drm"
     ];
     boot.extraModprobeConfig = lib.mkMerge [
       "options nvidia_drm modeset=1 fbdev=1"
