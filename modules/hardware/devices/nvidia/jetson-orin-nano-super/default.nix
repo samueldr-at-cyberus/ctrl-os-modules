@@ -55,7 +55,8 @@ in
     ];
 
     boot.kernelModules = [
-      #"tegra_drm"
+      "tegra_drm"
+      # XXX Must not be loaded eagerly?
       #"nvidia_drm"
     ];
     boot.extraModprobeConfig = lib.mkMerge [
