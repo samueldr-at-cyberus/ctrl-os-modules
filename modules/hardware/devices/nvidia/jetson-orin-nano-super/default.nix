@@ -55,8 +55,13 @@ in
 
     boot.kernelModules = [
       "tegra_drm"
+      # This *cannot* be loaded with `tegra_drm` or else it breaks.
+      # "nvidia_drm"
     ];
+
     boot.extraModprobeConfig = lib.mkMerge [
+      # Without `modeset`, the X11 driver will fail to work.
+      # This is the vendor-suggested configuration.
       "options nvidia_drm modeset=1 fbdev=1"
     ];
 
