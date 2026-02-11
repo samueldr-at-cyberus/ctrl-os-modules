@@ -2,16 +2,22 @@
 , stdenv
 , fetchurl
 , dpkg
+, nvidia-l4t
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "nvidia-l4t-firmware";
-  version = "36.4.7-20250918154033";
+  inherit (nvidia-l4t) version;
 
-  src = fetchurl {
-    url = "https://repo.download.nvidia.com/jetson/t234/pool/main/n/${finalAttrs.pname}/${finalAttrs.pname}_${finalAttrs.version}_arm64.deb";
-    hash = "sha256-ONxahbRRmmuh/yeSrh4Auqu/EuG3Q4ua79zkJNoVSss=";
-  };
+  src =
+    fetchurl
+    nvidia-l4t
+      .sources
+      ."t234"
+      .${finalAttrs.version}
+      .packages
+      .nvidia-l4t-firmware
+  ;
   unpackPhase = ''
     runHook preUnpack
 

@@ -3,7 +3,8 @@ let
   #       package, as it wouldn't work in overriding as expected.
   #       This version is used for `fetchurl` and for the `mkDerivation` later.
   # NOTE: This needs to be updated and match with the compatible `nv-oot` version.
-  version = "36.4.4-20250616085344";
+  version = "36.4.4";
+  sources = builtins.fromJSON (builtins.readFile ./nvidia-l4t-packages.json);
 in
 { lib
 , stdenv
@@ -21,85 +22,45 @@ in
 , libffi
 , dbus
 
-,
-  # `srcs` is exposed in `passthru` to allow easily overriding `srcs`.
-  #
-  #     let p = linuxPackages.nvidia-l4t; in
-  #     p.override {
-  #        srcs = p.srcs // {
-  #          linux-nv-oot = builtins.fetchGit .../linux-nv-oot;
-  #        };
-  #     })
-  srcs ?
-    let
-      # These packages were identified by comparing the x86_64 proprietary
-      # driver library names, and matching those found in the BSP.
-      # Then, packags that were dependencies added as needed.
-      packages = {
-        "36.4.4-20250616085344" = {
-          "nvidia-l4t-core" = "sha256-BJdWB9Eh3WeanwJpOdXBJt2eaCu7prccAZQiEuvCsJA=";
-          "nvidia-l4t-3d-core" = "sha256-EkQPDv+H/yKQZyb9rWHYeiaBv4rOnYJLiyCODujf28w=";
-          "nvidia-l4t-gbm" = "sha256-VszXZ56OJrfo6ufcIR2zAXO54Pgfrxo7Mfb0xTXdZKk=";
+, srcs ?
+    builtins.listToAttrs
+    (
+      builtins.map
+      (
+        name:
+        {
+          inherit name;
+          value = fetchurl sources."t234".${version}.packages.${name};
+        }
+      )
+      [
+        "nvidia-l4t-core"
+        "nvidia-l4t-3d-core"
+        "nvidia-l4t-gbm"
 
-          # egl-wayland
-          "nvidia-l4t-wayland" = "sha256-cXEnnC0nwCOYAhWR6/pBVS+FkotVF0MsnALyxkViUUw=";
-          "nvidia-l4t-libwayland-egl1" = "sha256-uRJRVIF9nUDBFx89hPfETlAD1+G/zHjr95xQephMbRs=";
-          # Dep for `nvidia-l4t-wayland`
-          "nvidia-l4t-libwayland-client0" = "sha256-7r4FvQAxGORnQ9uBCE5X8EtKlfGj9Ln2mu/Vam6yQ1U=";
-          # Dep for `nvidia-l4t-wayland`
-          "nvidia-l4t-libwayland-server0" = "sha256-rCPc8rK4OxivTsH4LTWlvJ+AE+0dcEKM1lll7qYsUIk=";
-          # vksc-core
-          "nvidia-l4t-vulkan-sc" = "sha256-f3F2Sl8vHqmJ9XtybcZjAMA7vq8ZWtQDyryOJPSu4uU=";
+        # egl-wayland
+        "nvidia-l4t-wayland"
+        "nvidia-l4t-libwayland-egl1"
+        # Dep for `nvidia-l4t-wayland`
+        "nvidia-l4t-libwayland-client0"
+        # Dep for `nvidia-l4t-wayland`
+        "nvidia-l4t-libwayland-server0"
+        # vksc-core
+        "nvidia-l4t-vulkan-sc"
 
-          # libnvcuvid
-          #"nvidia-l4t-multimedia" = "";
-          # libcuda
-          "nvidia-l4t-cuda" = "sha256-t7y51bbBA0exxNBc0lQO3F5p9DjZvSSf/wDFNve+oMs=";
-          # Deps for cuda
-          "nvidia-l4t-nvsci" = "sha256-PtdvksmTO+m1LpBf4MtoPps4QCgts67Ada9U8+e7wCQ=";
-          # libnvidia-ml
-          "nvidia-l4t-nvml" = "sha256-u+lJ/wwnkiHhMnqwAAa1BeShzU/UbTD4ATTJDWK68Dw=";
+        # libnvcuvid
+        #"nvidia-l4t-multimedia"
+        # libcuda
+        "nvidia-l4t-cuda"
+        # Deps for cuda
+        "nvidia-l4t-nvsci"
+        # libnvidia-ml
+        "nvidia-l4t-nvml"
 
-          # Configuration files that end-up being required
-          "nvidia-l4t-init" = "sha256-FlylFyV8xP+JoXr+g/bZ4E34Yw9Vg38GSfeS3MrvwVY=";
-        };
-        "36.4.7-20250918154033" = {
-          "nvidia-l4t-core" = "sha256-MtaXaH25dmuQwCFlXcSeYlWOfIQ6UoZ8hXM8NGryg+E=";
-          "nvidia-l4t-3d-core" = "sha256-uOebamU6vOuzrCHIDdGejR5cTBIQIz0D3TQM0/GoTFs=";
-          "nvidia-l4t-gbm" = "sha256-fz6z48Hzf6tzV4TbSB4lkLXdhFiLjkX3S+ia+atbS8A=";
-
-          # egl-wayland
-          "nvidia-l4t-wayland" = "sha256-EY/21rNnF2SyuX+B5u15IFsV2Ct4euLc6qH3x1h7R8w=";
-          "nvidia-l4t-libwayland-egl1" = "sha256-rmcNTjLe6GXujlitMiXS8neLOEeXGIKqjmA9c3CjE/o=";
-          # Dep for `nvidia-l4t-wayland`
-          "nvidia-l4t-libwayland-client0" = "sha256-ZEu0d2Ylj5fWjH7QvF9BSMGC6CZmGlezuKF7f2Gql/M=";
-          # Dep for `nvidia-l4t-wayland`
-          "nvidia-l4t-libwayland-server0" = "sha256-tbL7bYdsEMwAQ+ltk2niVBpqtGPLP3YUlhXDl7elSM4=";
-          # vksc-core
-          "nvidia-l4t-vulkan-sc" = "sha256-EjdA84U1P6/dya2fjfbPEP5XQyO8pnoLIfb433wQ52s=";
-
-          # libnvcuvid
-          #"nvidia-l4t-multimedia" = "";
-          # libcuda
-          "nvidia-l4t-cuda" = "sha256-CaFTxuYZ+hrSuiEw/4HJBjDXrHkSb5t3ZcqEFELPyL4=";
-          # Deps for cuda
-          "nvidia-l4t-nvsci" = "sha256-+X4RMGKlA0FuEVTGGnnoQSe8Kjh4M975C4AoyxxNFE8=";
-          # libnvidia-ml
-          "nvidia-l4t-nvml" = "sha256-+fRq0H/aIiKaAab/C/njF70U9QmFF7xywLdqXGBfxfA=";
-
-          # Configuration files that end-up being required
-          "nvidia-l4t-init" = "sha256-am/ede7X+URfzYysbSOtUO/J5shM46V3TwaVXzTsL44=";
-        };
-      };
-    in
-    builtins.mapAttrs (
-      package: hash:
-      fetchurl rec {
-        name = "${package}_${version}_arm64.deb";
-        url = "https://repo.download.nvidia.com/jetson/t234/pool/main/n/${package}/${name}";
-        inherit hash;
-      }
-    ) packages.${version},
+        # Configuration files that end-up being required
+        "nvidia-l4t-init"
+      ]
+    )
 }:
 
 
@@ -238,6 +199,10 @@ stdenv.mkDerivation (finalAttrs: {
   dontPatchELF = true;
   # Also don't even try stripping vendor libraries.
   dontStrip = true;
+
+  passthru = {
+    inherit sources;
+  };
 
   meta = {
     licenses = [

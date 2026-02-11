@@ -119,7 +119,12 @@ in
           nvidia-jetson-orin-nano-super = {
             nvidia-oot = config.boot.kernelPackages.callPackage ./nvidia-oot { };
             nvidia-l4t = final.callPackage ./nvidia-l4t { };
-            nvidia-l4t-firmware = final.callPackage ./nvidia-l4t-firmware { };
+            nvidia-l4t-firmware = final.callPackage ./nvidia-l4t-firmware {
+              inherit
+                (final.nvidia-jetson-orin-nano-super)
+                nvidia-l4t
+              ;
+            };
 
             nvidia-l4t-kernel =
               final.buildLinux {
