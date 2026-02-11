@@ -38,22 +38,77 @@ in
       ])
     ];
 
-
     boot.blacklistedKernelModules = [
       # FIXME: figure out ***why*** vendor blacklists it.
       # Source: nvidia-l4t-init_36.4.4-20250616085344_arm64:etc/modprobe.d/denylist-tpm-ftpm-tee.conf
-      # "tpm_ftpm_tee"
+      #"tpm_ftpm_tee"
       # XXX was it blacklisting this that made the device unreliable to boot once past "switch root"?
+      # Probably not...
 
       # Prevent upstream audio drivers from being loaded.
       "snd_soc_tegra_audio_graph_card"
 
-      # XXX when using proprietary drivers
-      "tegra_drm"
+      ## XXX when using proprietary drivers
+      #"tegra_drm"
+      # XXX
+      "nvidia_drm"
     ];
 
+    boot.kernelModules = [
+      #"tegra_drm"
+      #"nvidia_drm"
+    ];
+    boot.extraModprobeConfig = lib.mkMerge [
+      "options nvidia_drm modeset=1 fbdev=1"
+    ];
+
+    users.groups = {
+      # Mostly to shut up udev rules
+      #
+      #     /etc/udev/rules.d/99-tegra-devices.rules:00 Unknown group 'debug', ignoring.
+      debug = { };
+    };
+
+    services.xserver = {
+      # Use the `nvidia` driver for `tegra` kernel driver matches.
+      config = ''
+        Section "OutputClass" 
+          Identifier "nvidia" 
+          MatchDriver "tegra" 
+          Driver "nvidia"
+        EndSection 
+      '';
+
+      # Vendor applies those "optimizations".
+      moduleSection = ''
+        Disable "dri"
+        SubSection "extmod"
+          Option "omit xfree86-dga"
+        EndSubSection
+      '';
+
+      # NOTE: videoDrivers cannot be used.
+      # Enabling `"nvidia"` within it uses the non-l4t NVIDIA driver.
+      drivers = lib.mkForce (lib.singleton {
+        name = "nvidia";
+        modules = [ pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t ];
+        display = true; # FIXME: is this right?
+        deviceSection = /*
+          # Those are added by the NixOS module.
+          Identifier "Tegra0"
+          Driver "nvidia"
+        */ ''
+          Option "AllowEmptyInitialConfiguration" "true"
+        '';
+      });
+
+      displayManager.xserverArgs = [
+        "-logverbose 6"
+      ];
+    };
+
     # We can add the packages to the overlay even without enabling the
-    # *configuration* for the proprietary packags.
+    # *configuration* for the proprietary packages.
     nixpkgs.overlays = [
       (
         final: super:
@@ -151,15 +206,34 @@ in
     # FIXME: mkif
     environment.etc = {
       "egl/egl_external_platform.d".source = "/run/opengl-driver/share/egl/egl_external_platform.d/";
+      "glvnd/egl_vendor.d".source = "/run/opengl-driver/share/glvnd/egl_vendor.d";
     };
     # FIXME: mkif
     services.udev.packages = [
       pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t
     ];
     # FIXME: mkif
-    hardware.firmware = [
+    hardware.firmware = lib.mkAfter [
       pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t-firmware
     ];
+    # With *at least the vendor kernel*, it looks like xz firmware aren't used 
+    # /run/current-system/firmware/nvidia/ga10b/gpmu_ucode_next_prod_image.bin.xz
+    # [    0.000000] gk20a 17000000.gpu: Direct firmware load for ga10b/gpmu_ucode_next_prod_image.bin failed with error -2
+    # [    0.000000] gk20a 17000000.gpu: Direct firmware load for tegra23x/gpmu_ucode_next_prod_image.bin failed with error -2
+    #
+    # This might be why:
+    #
+    #     /etc/nixos $ zcat /proc/config.gz |  grep -i fw.loader | sort -u
+    #     # CONFIG_FW_LOADER_COMPRESS_XZ is not set
+    #     CONFIG_FW_LOADER_COMPRESS=y
+    #     # CONFIG_FW_LOADER_COMPRESS_ZSTD is not set
+    #     CONFIG_FW_LOADER_PAGED_BUF=y
+    #     # CONFIG_FW_LOADER_USER_HELPER_FALLBACK is not set
+    #     CONFIG_FW_LOADER_USER_HELPER=y
+    #     CONFIG_FW_LOADER=y
+    #
+    hardware.firmwareCompression = "none";
+
     boot.kernelParams = [
       # Prevent simple-framebuffer from picking-up the framebuffer.
       # FIXME: this could be breaking the proprietary drivers?
