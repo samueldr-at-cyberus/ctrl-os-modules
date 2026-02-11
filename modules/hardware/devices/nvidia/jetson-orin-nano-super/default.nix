@@ -95,7 +95,7 @@ in
       drivers = lib.mkForce (lib.singleton {
         name = "nvidia";
         modules = [ pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t ];
-        display = true; # FIXME: is this right?
+        display = true;
         deviceSection = /*
           # Those are added by the NixOS module.
           Identifier "Tegra0"
