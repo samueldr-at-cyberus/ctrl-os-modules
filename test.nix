@@ -1,10 +1,14 @@
 { pkgs ? import <nixpkgs> {} }:
 
-pkgs.appendOverlays([
-  (
-  final: super:
-  {
-    nvidia-oot = final.linuxPackages.callPackage modules/hardware/devices/nvidia/jetson-orin-nano-super/nvidia-oot/default.nix {};
-  }
-  )
-])
+let
+  hack =
+    import modules/hardware/devices/nvidia/jetson-orin-nano-super/default.nix {
+      config = {};
+      inherit (pkgs) lib;
+      pkgs = {};
+    }
+  ;
+in
+  pkgs.appendOverlays
+  hack
+  .config.content.nixpkgs.overlays
