@@ -14,26 +14,31 @@
   #     })
   srcs ?
     let
-      #rev = "rel-36_eng_2026-01-04";
-      #repos = {
-      #  "linux-hwpm" = "sha256-LrCtuQIbHxBibJaMnrNYEAegtezUDUPGiHJDW+0qHA8=";
-      #  "linux-nvgpu" = "sha256-zvnTygjF8BUNxaqcU4Mt6kAwngFpArM5timpjw074uQ=";
-      #  "linux-nv-oot" = "sha256-Vt4ef0GIFpk34IPCIL7/R6Jsssd90GXLKonIY8P4e5s=";
-      #  "tegra/kernel-src/nv-kernel-display-driver" = "sha256-ACxHLNEcSoYOZw7LQQUrFkD+7sLIDpeCHcjJ954Rl6E=";
-      #};
-      #rev = "rel-36_eng_2025-02-28";
-      #repos = {
-      #  "linux-hwpm" = "sha256-otOVFeF+8XKORWMXTRTcXQUXvojdwInVC3jPXTgrk3A=";
-      #  "linux-nvgpu" = "sha256-4SwQEu8Qe8lp9SIRmAgjNaudGCiqK4V19G8tR5TvFrs=";
-      #  "linux-nv-oot" = "sha256-IkIrm2CLgkw23QYGPGgupNiuyyTzFVhSPx4tED9rAtE=";
-      #  "tegra/kernel-src/nv-kernel-display-driver" = "sha256-TfQt460NFUpUhjqDJXZUf2UCRDTtRf97F4x7pJzv3Rs=";
-      #};
       rev = "jetson_36.4.4";
       repos = {
-        "linux-hwpm" = "sha256-otOVFeF+8XKORWMXTRTcXQUXvojdwInVC3jPXTgrk3A=";
-        "linux-nvgpu" = "sha256-qI/YRdPIvXEDb4AU+ksLmgiwcGlSHLJTw2N/B/yOFpY=";
-        "linux-nv-oot" = "sha256-Y1mSRW4Z1ylhkH5zBSUO3Dl8ymun0ZxSim86yuL7rPQ=";
-        "tegra/kernel-src/nv-kernel-display-driver" = "sha256-gpjoiAt6SOVbZmAnPYTxf0l+rFo9pkFvE9+MbTcPuCk=";
+        # Builds for 6.12...
+        # No equivalent proprietary drivers (540.5.0).
+        "rel-36_eng_2026-01-04" = {
+          "linux-hwpm" = "sha256-LrCtuQIbHxBibJaMnrNYEAegtezUDUPGiHJDW+0qHA8=";
+          "linux-nvgpu" = "sha256-zvnTygjF8BUNxaqcU4Mt6kAwngFpArM5timpjw074uQ=";
+          "linux-nv-oot" = "sha256-Vt4ef0GIFpk34IPCIL7/R6Jsssd90GXLKonIY8P4e5s=";
+          "tegra/kernel-src/nv-kernel-display-driver" = "sha256-ACxHLNEcSoYOZw7LQQUrFkD+7sLIDpeCHcjJ954Rl6E=";
+        };
+        # Does not work on 6.12...
+        # Builds but does not actually provide a display on X11 with vendor kernel@5.15.185.rel-36_eng_2026-01-04 and l4t@36.4.4-20250616085344
+        "rel-36_eng_2025-02-28" = {
+          "linux-hwpm" = "sha256-otOVFeF+8XKORWMXTRTcXQUXvojdwInVC3jPXTgrk3A=";
+          "linux-nvgpu" = "sha256-4SwQEu8Qe8lp9SIRmAgjNaudGCiqK4V19G8tR5TvFrs=";
+          "linux-nv-oot" = "sha256-IkIrm2CLgkw23QYGPGgupNiuyyTzFVhSPx4tED9rAtE=";
+          "tegra/kernel-src/nv-kernel-display-driver" = "sha256-TfQt460NFUpUhjqDJXZUf2UCRDTtRf97F4x7pJzv3Rs=";
+        };
+        # Does not work on 6.12...
+        "jetson_36.4.4" = {
+          "linux-hwpm" = "sha256-otOVFeF+8XKORWMXTRTcXQUXvojdwInVC3jPXTgrk3A=";
+          "linux-nvgpu" = "sha256-qI/YRdPIvXEDb4AU+ksLmgiwcGlSHLJTw2N/B/yOFpY=";
+          "linux-nv-oot" = "sha256-Y1mSRW4Z1ylhkH5zBSUO3Dl8ymun0ZxSim86yuL7rPQ=";
+          "tegra/kernel-src/nv-kernel-display-driver" = "sha256-gpjoiAt6SOVbZmAnPYTxf0l+rFo9pkFvE9+MbTcPuCk=";
+        };
       };
     in
     builtins.mapAttrs (
@@ -43,7 +48,7 @@
         repo = "nv-tegra/${repo}";
         inherit rev hash;
       }
-    ) repos,
+    ) repos.${rev},
 }:
 
 kernel.stdenv.mkDerivation (finalAttrs: {
@@ -176,6 +181,18 @@ kernel.stdenv.mkDerivation (finalAttrs: {
     "NV_OOT_BLOCK_TEGRA_VIRT_STORAGE_SKIP_BUILD=y"
   ];
 
+  KCFLAGS =
+  #lib.escapeShellArgs (
+      lib.concatStringsSep " " [
+        "-I$(srctree.nvidia-oot)/include"
+        # The following three flags are used to make conftest work.
+        "-std=gnu11"
+        "-fshort-wchar"
+        "-Wno-incompatible-pointer-types"
+      ]
+    #))
+    ;
+
   buildFlags = [
     "modules"
   ];
@@ -236,16 +253,7 @@ kernel.stdenv.mkDerivation (finalAttrs: {
         -C "$workspace/nv-kernel-display-driver/kernel-open" \
         SYSSRC="${kernel.dev}/lib/modules/${kernel.modDirVersion}/source" \
         SYSOUT="${kernel.dev}/lib/modules/${kernel.modDirVersion}/build" \
-        SYSSRCHOST1X="$workspace/linux-nv-oot/drivers/gpu/host1x/include" \
-        KCFLAGS=${lib.escapeShellArg (
-          lib.concatStringsSep " " [
-            "-I$(srctree.nvidia-oot)/include"
-            # The following three flags are used to make conftest work.
-            "-std=gnu11"
-            "-fshort-wchar"
-            "-Wno-error=incompatible-pointer-types"
-          ]
-        )}
+        SYSSRCHOST1X="$workspace/linux-nv-oot/drivers/gpu/host1x/include"
     else
 
       printf '\n :: Building nv-kernel-display-driver module\n'
