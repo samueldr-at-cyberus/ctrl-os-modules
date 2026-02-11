@@ -14,12 +14,26 @@
   #     })
   srcs ?
     let
-      rev = "rel-36_eng_2026-01-04";
+      #rev = "rel-36_eng_2026-01-04";
+      #repos = {
+      #  "linux-hwpm" = "sha256-LrCtuQIbHxBibJaMnrNYEAegtezUDUPGiHJDW+0qHA8=";
+      #  "linux-nvgpu" = "sha256-zvnTygjF8BUNxaqcU4Mt6kAwngFpArM5timpjw074uQ=";
+      #  "linux-nv-oot" = "sha256-Vt4ef0GIFpk34IPCIL7/R6Jsssd90GXLKonIY8P4e5s=";
+      #  "tegra/kernel-src/nv-kernel-display-driver" = "sha256-ACxHLNEcSoYOZw7LQQUrFkD+7sLIDpeCHcjJ954Rl6E=";
+      #};
+      #rev = "rel-36_eng_2025-02-28";
+      #repos = {
+      #  "linux-hwpm" = "sha256-otOVFeF+8XKORWMXTRTcXQUXvojdwInVC3jPXTgrk3A=";
+      #  "linux-nvgpu" = "sha256-4SwQEu8Qe8lp9SIRmAgjNaudGCiqK4V19G8tR5TvFrs=";
+      #  "linux-nv-oot" = "sha256-IkIrm2CLgkw23QYGPGgupNiuyyTzFVhSPx4tED9rAtE=";
+      #  "tegra/kernel-src/nv-kernel-display-driver" = "sha256-TfQt460NFUpUhjqDJXZUf2UCRDTtRf97F4x7pJzv3Rs=";
+      #};
+      rev = "jetson_36.4.4";
       repos = {
-        "linux-hwpm" = "sha256-LrCtuQIbHxBibJaMnrNYEAegtezUDUPGiHJDW+0qHA8=";
-        "linux-nvgpu" = "sha256-zvnTygjF8BUNxaqcU4Mt6kAwngFpArM5timpjw074uQ=";
-        "linux-nv-oot" = "sha256-Vt4ef0GIFpk34IPCIL7/R6Jsssd90GXLKonIY8P4e5s=";
-        "tegra/kernel-src/nv-kernel-display-driver" = "sha256-ACxHLNEcSoYOZw7LQQUrFkD+7sLIDpeCHcjJ954Rl6E=";
+        "linux-hwpm" = "sha256-otOVFeF+8XKORWMXTRTcXQUXvojdwInVC3jPXTgrk3A=";
+        "linux-nvgpu" = "sha256-qI/YRdPIvXEDb4AU+ksLmgiwcGlSHLJTw2N/B/yOFpY=";
+        "linux-nv-oot" = "sha256-Y1mSRW4Z1ylhkH5zBSUO3Dl8ymun0ZxSim86yuL7rPQ=";
+        "tegra/kernel-src/nv-kernel-display-driver" = "sha256-gpjoiAt6SOVbZmAnPYTxf0l+rFo9pkFvE9+MbTcPuCk=";
       };
     in
     builtins.mapAttrs (
