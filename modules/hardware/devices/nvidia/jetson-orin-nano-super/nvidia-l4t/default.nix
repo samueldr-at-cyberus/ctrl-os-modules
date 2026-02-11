@@ -3,7 +3,7 @@ let
   #       package, as it wouldn't work in overriding as expected.
   #       This version is used for `fetchurl` and for the `mkDerivation` later.
   # NOTE: This needs to be updated and match with the compatible `nv-oot` version.
-  version = "36.4.4";
+  version = "36.5.0";
   sources = builtins.fromJSON (builtins.readFile ./nvidia-l4t-packages.json);
 in
 { lib

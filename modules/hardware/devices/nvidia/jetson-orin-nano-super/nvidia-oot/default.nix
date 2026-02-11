@@ -14,7 +14,7 @@
   #     })
   srcs ?
     let
-      rev = "jetson_36.4.4";
+      rev = "jetson_36.5";
       repos = {
         # Builds for 6.12...
         # No equivalent proprietary drivers (540.5.0).
@@ -38,6 +38,14 @@
           "linux-nvgpu" = "sha256-qI/YRdPIvXEDb4AU+ksLmgiwcGlSHLJTw2N/B/yOFpY=";
           "linux-nv-oot" = "sha256-Y1mSRW4Z1ylhkH5zBSUO3Dl8ymun0ZxSim86yuL7rPQ=";
           "tegra/kernel-src/nv-kernel-display-driver" = "sha256-gpjoiAt6SOVbZmAnPYTxf0l+rFo9pkFvE9+MbTcPuCk=";
+        };
+        # Works on vendor kernel@5.15.185.rel-36_eng_2026-01-04, with proprietary l4t@36.5.0
+        # (GBM backend still fails)
+        "jetson_36.5" = {
+          "linux-hwpm" = "sha256-LrCtuQIbHxBibJaMnrNYEAegtezUDUPGiHJDW+0qHA8=";
+          "linux-nvgpu" = "sha256-zvnTygjF8BUNxaqcU4Mt6kAwngFpArM5timpjw074uQ=";
+          "linux-nv-oot" = "sha256-6sqz+yiG8VfJ5/QHn13a60TKqdwl1LuJfV3jCPoJxp4=";
+          "tegra/kernel-src/nv-kernel-display-driver" = "sha256-MjiircE+B8r15QAEt/ZZiWPV7yZd6/2CuJnbc6Z2YiU=";
         };
       };
     in
