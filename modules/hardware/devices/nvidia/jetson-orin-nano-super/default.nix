@@ -30,7 +30,16 @@ in
       "phy-tegra-xusb"
     ];
 
-    boot.kernelPackages = pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t-kernelPackages;
+    boot.kernelPackages =
+      # OOT modules support up to 6.12
+      # XXX still does not work *as-is* with OOT modules.
+      # [   27.079679] [drm:nv_drm_master_set [nvidia_drm]] *ERROR* [nvidia-drm] [GPU ID 0x00020000] Failed to grab modeset ownership
+      # I suspect it's `simpledrm` related.
+      pkgs.linuxPackages_6_12
+
+      # Vendor kernel
+      #pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t-kernelPackages
+    ;
 
     boot.extraModulePackages = lib.mkMerge [
       (lib.mkIf cfg.enableOotModules [
@@ -110,6 +119,18 @@ in
       ];
     };
 
+    boot.kernelPatches = [
+      {
+        name = "nvidia-disable-simpledrm";
+        patch = null;
+        structuredExtraConfig = {
+          # Vendor assumes this configuration is used.
+          FB_SIMPLE = lib.kernel.yes;
+          DRM_SIMPLEDRM = lib.mkForce lib.kernel.no;
+        };
+      }
+    ];
+
     # We can add the packages to the overlay even without enabling the
     # *configuration* for the proprietary packages.
     nixpkgs.overlays = [
@@ -129,6 +150,7 @@ in
             nvidia-l4t-kernel =
               final.buildLinux {
                 version = "5.15.185.rel-36_eng_2026-01-04";
+                # Tag jetson_36.5 for 36.5.0
                 modDirVersion = "5.15.185";
                 src = final.fetchFromGitLab {
                   owner = "nvidia";
