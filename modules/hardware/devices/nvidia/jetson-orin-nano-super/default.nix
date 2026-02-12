@@ -35,10 +35,10 @@ in
       # XXX still does not work *as-is* with OOT modules.
       # [   27.079679] [drm:nv_drm_master_set [nvidia_drm]] *ERROR* [nvidia-drm] [GPU ID 0x00020000] Failed to grab modeset ownership
       # I suspect it's `simpledrm` related.
-      pkgs.linuxPackages_6_12
+      #pkgs.linuxPackages_6_12
 
       # Vendor kernel
-      #pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t-kernelPackages
+      pkgs.nvidia-jetson-orin-nano-super.nvidia-l4t-kernelPackages
     ;
 
     boot.extraModulePackages = lib.mkMerge [
@@ -119,17 +119,20 @@ in
       ];
     };
 
-    boot.kernelPatches = [
-      {
-        name = "nvidia-disable-simpledrm";
-        patch = null;
-        structuredExtraConfig = {
-          # Vendor assumes this configuration is used.
-          FB_SIMPLE = lib.kernel.yes;
-          DRM_SIMPLEDRM = lib.mkForce lib.kernel.no;
-        };
-      }
-    ];
+    # With this, 6.12 resets when starting X11.
+    # Not ideal...
+    # So DRM_SIMPLEDRM really must be part of the problem.
+    #boot.kernelPatches = [
+    #  {
+    #    name = "nvidia-disable-simpledrm";
+    #    patch = null;
+    #    structuredExtraConfig = {
+    #      # Vendor assumes this configuration is used.
+    #      FB_SIMPLE = lib.kernel.yes;
+    #      DRM_SIMPLEDRM = lib.mkForce lib.kernel.no;
+    #    };
+    #  }
+    #];
 
     # We can add the packages to the overlay even without enabling the
     # *configuration* for the proprietary packages.
