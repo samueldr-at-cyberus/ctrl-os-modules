@@ -26,8 +26,29 @@ in
 
     boot.extraModulePackages = lib.mkMerge [
       (lib.mkIf cfg.enableOotModules [
-        (config.boot.kernelPackages.callPackage ./nvidia-oot { })
+        config.boot.kernelPackages.nvidia-oot
       ])
+    ];
+
+    nixpkgs.overlays = [
+      (final: super: {
+        # This is ugly, but needed to *properly* overlay `linuxPackages` packages.
+        linuxKernel = super.linuxKernel // {
+          # Thanks to laziness, we only need to override `packagesFor`.
+          packagesFor =
+            kernel:
+            let
+              # From which we apply the previous version of the function
+              packages = super.linuxKernel.packagesFor kernel;
+            in
+            # And merge our package in.
+            packages
+            // {
+              # Without forgetting to `callPackage` from this kernel's package set!
+              nvidia-oot = packages.callPackage ./nvidia-oot { };
+            };
+        };
+      })
     ];
   };
 }
