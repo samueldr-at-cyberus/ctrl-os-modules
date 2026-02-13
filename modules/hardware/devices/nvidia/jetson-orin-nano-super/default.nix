@@ -37,6 +37,10 @@ in
             nvidia-oot = kFinal.callPackage ./nvidia-oot { };
           })
         ];
+        nvidia-jetson-orin-nano-super = {
+          nvidia-l4t-kernelPackages = final.linuxPackagesFor final.nvidia-jetson-orin-nano-super.nvidia-l4t-kernel;
+          nvidia-l4t-kernel = final.callPackage ./nvidia-l4t-kernel { };
+        };
       })
     ];
   };
