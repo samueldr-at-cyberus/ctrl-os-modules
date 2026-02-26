@@ -36,12 +36,59 @@ in
           // {
             internal = true;
           };
+        # FIXME: We might want to set global options in the CTRL-OS options set like:
+        #     ctrl-os.hardware.useSuggestedConfig
+        #     ctrl-os.hardware.recommended.kernelPackage
+        #     ctrl-os.hardware.internal.installerConfig
+        # And use those options to configure the installer,
+        # and force options like the kernel version.
+        # The `ctrl-os.hardware.recommended.kernelPackage` option could be used by end-users like:
+        #     boot.kernelPackages = lib.mkForce ctrl-os.hardware.recommended.kernelPackage;
+        # Which would make working with existing user configs and their own nix goldberg
+        # machines more straightforward. Especially for supporting multiple devices.
+        withTempIsoWorkarounds =
+          lib.mkEnableOption "temp workaround to just get an iso building for testing."
+          // {
+            internal = true;
+            default = options ? isoImage || options ? sdImage;
+          };
       };
     };
   };
 
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
+      (lib.mkIf (cfg.quirks.withTempIsoWorkarounds) {
+        warnings = [
+          "Building this ISO image with `allowUnfree` forced on for NVIDIA drivers!"
+        ];
+        nixpkgs.config.allowUnfree = true;
+        ctrl-os.hardware.devices.nvidia-jetson-orin-nano-super.enableHardwareAcceleration = true;
+        boot.kernelPackages = lib.mkForce pkgs.linuxPackages_6_12;
+
+        # We're keeping "latest kernel" entries in the menu.
+        # All entries effectively are the kernel we `mkForce`d previously.
+        # The `latest` kernel option won't build here.
+        specialisation = lib.mkIf (config ? isoImage && config.isoImage.edition == "graphical") {
+          gnome.configuration = {
+            isoImage.showConfiguration = lib.mkForce false;
+          };
+          plasma.configuration = {
+            isoImage.showConfiguration = lib.mkForce false;
+          };
+        };
+
+        # bcachefs support may be broken on 6.12
+        boot.supportedFilesystems.bcachefs = lib.mkForce false;
+        # zfs *should* work on 6.12 which is "the" LTS.
+        boot.supportedFilesystems.zfs = lib.mkOverride 10 true;
+
+        # FIXME
+        # Booting with `plymouth` enabled, at least on the ISO, hangs with:
+        #     A start job is running for Hold until boot process finishes up
+        # This is could be a side-effect of the simpledrm+nvidia-drm integration.
+        boot.plymouth.enable = lib.mkForce false;
+      })
       {
         assertions = [
           {
