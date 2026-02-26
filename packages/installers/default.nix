@@ -150,6 +150,7 @@ lib.listToAttrs (
       name = device;
       value = {
         iso = mkInstaller "cd-dvd/installation-cd-minimal.nix";
+        iso-graphical = mkInstaller "cd-dvd/installation-cd-graphical-combined.nix";
         sd-image-new-kernel = mkInstaller "sd-card/sd-image-aarch64-new-kernel-no-zfs-installer.nix";
       };
     }
