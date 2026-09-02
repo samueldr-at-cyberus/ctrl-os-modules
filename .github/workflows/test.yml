@@ -12,9 +12,11 @@ jobs:
     strategy:
       matrix:
         nixOpts: [
-            { flag: "", tag: "cyberus-linux-26.05" },
+            { flag: "", tag: "default" },
+            { flag: "--override-input nixpkgs https://channels.cyberus-linux.com/channel/cyberus-linux-26.05.tar.xz", tag: "cyberus-linux-26.05" },
             { flag: "--override-input nixpkgs https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz", tag: "nixos-unstable" },
           ]
+    name: Tests (${{ matrix.nixOpts.tag }})
     steps:
       - uses: actions/checkout@v5
       - uses: samueldr/lix-gha-installer-action@latest
