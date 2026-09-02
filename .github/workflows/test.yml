@@ -11,13 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        channel:
-          # With the pinned release.
-          - "default"
-          # With the latest 26.05 release
-          - "cyberus-linux-26.05"
-          # With the latest nixos-unstable release
-          - "nixos-unstable"
+        nixOpts: [
+            { flag: "", tag: "cyberus-linux-26.05" },
+            { flag: "--override-input nixpkgs https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz", tag: "nixos-unstable" },
+          ]
     steps:
       - uses: actions/checkout@v5
       - uses: samueldr/lix-gha-installer-action@latest
@@ -32,10 +29,10 @@ jobs:
         uses: actions/cache@v5
         with:
           path: .cache
-          key: cache-${{ matrix.channel }}-${{ github.ref_name }}-${{ github.run_id }}
+          key: cache-${{ matrix.nixOpts.tag }}-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
-            cache-${{ matrix.channel }}-${{ github.ref_name }}-
-            cache-${{ matrix.channel }}-
+            cache-${{ matrix.nixOpts.tag }}-${{ github.ref_name }}-
+            cache-${{ matrix.nixOpts.tag }}-
       - name: Repopulate Nix Store
         if: steps.cache.outputs.cache-hit
         run: |
@@ -45,23 +42,8 @@ jobs:
           else
             echo No cache to restore.
           fi
-      - name: Build the Modules for ${{ matrix.channel }}
-        run: |
-          set -eux
-          if [[ "${{ matrix.channel }}" == cyberus-linux-* ]]; then
-              channel=https://channels.cyberus-linux.com/channel/${{ matrix.channel }}.tar.xz
-          else
-              channel=https://channels.nixos.org/${{ matrix.channel }}/nixexprs.tar.xz
-          fi
-          nix_args=()
-
-          if [[ "${{ matrix.channel }}" != "default" ]]; then
-            nix_args+=(
-              --override-input nixpkgs "$channel"
-            )
-          fi
-
-          nix -L flake check ${nix_args[@]}
+      - name: Build the Modules for ${{ matrix.nixOpts.tag }}
+        run: nix -L flake check ${{ matrix.nixOpts.flag }}
       - name: Export Nix Store
         if: always()
         run: |
